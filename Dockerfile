@@ -15,12 +15,13 @@ RUN npm run build
 # ──────────────────────────────────────────────────────────
 # Stage 2: Install PHP dependencies
 # ──────────────────────────────────────────────────────────
-FROM composer:2 AS vendor
+FROM php:8.3-cli-alpine AS deps
+
+RUN docker-php-ext-install bcmath
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-
-# Cache bust to force rebuild (Railway caches aggressively)
-ARG CACHEBUST=2
 
 COPY composer.json composer.lock ./
 RUN composer install \
@@ -93,7 +94,7 @@ COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
 # Copy vendor from stage 2
-COPY --from=vendor /app/vendor ./vendor
+COPY --from=deps /app/vendor ./vendor
 
 # Copy Nginx config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
