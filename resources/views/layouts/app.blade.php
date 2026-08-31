@@ -451,6 +451,14 @@
             position: relative;
         }
 
+        tr:has(.action-menu[open]) td {
+            padding-bottom: 120px;
+        }
+
+        .action-menu[open] {
+            z-index: 40;
+        }
+
         .action-menu summary {
             list-style: none;
             width: 32px;
