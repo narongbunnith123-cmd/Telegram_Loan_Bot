@@ -1,0 +1,387 @@
+Telegram Loan Management Bot System Plan
+
+Project Overview
+
+System Name:
+
+Telegram Loan Management Bot System
+
+Purpose:
+
+A Laravel-based multi-group Telegram bot system that helps manage loans, overdue payments, daily interest calculation, and automatic reminder messages inside Telegram groups.
+
+The system supports:
+
+  -multiple Telegram groups
+  -automated loan reminders
+  -daily interest calculation
+  -payment tracking
+  -admin management
+  -scheduled jobs using cron
+  -Telegram webhook integration
+
+Main Goal:
+
+When the bot is added to a Telegram group, the system can manage loans for users inside that group automatically.
+
+Core System Architecture
+Backend:
+
+  -Framework: Laravel
+  -Database: MySQL
+  -Hosting: cPanel
+  -Queue Driver: Database Queue
+  -Scheduler: Laravel Scheduler + Cron Job
+  -Telegram Integration: Telegram Bot API
+
+Main User Roles
+1. Super Admin
+
+Controls entire platform.
+
+Permissions:
+
+  -manage all groups
+  -manage all loans
+  -control bot settings
+  -view reports
+  -approve group admins
+  -configure system settings
+  -disable/enable groups
+  -monitor logs
+
+2. Group Admin
+
+Controls only their Telegram group.
+
+Permissions:
+
+  -create loans
+  -update loans
+  -mark payments
+  -view borrower history
+  -manage reminder settings
+
+3. Borrower
+
+Limited access.
+
+Permissions:
+
+  -view own loan
+  -check balance
+  -upload payment proof
+  -receive reminders
+
+Main System Modules
+Module 1 — Telegram Bot Integration
+Purpose
+
+Connect Telegram groups with Laravel system.
+
+Features
+Bot Joins Group
+
+When bot added to group:
+
+System automatically stores:
+
+  -Telegram Group ID
+  -Group Name
+  -Added Date
+  -Group Owner
+
+Telegram Commands
+
+Example commands:
+
+  /start
+  /help
+  /myloan
+  /pay
+  /balance
+
+Webhook Flow
+
+Telegram → Laravel Webhook API → Database
+
+Webhook URL example:
+
+  https://yourdomain.com/api/telegram/webhook
+
+Module 2 — Group Management
+Purpose
+
+Manage multiple Telegram groups.
+
+Features
+Register Group Automatically
+
+When bot joins group:
+
+  status = pending
+
+Super Admin approves group.
+
+Group Settings
+
+Each group can configure:
+
+  interest_rate
+  reminder_frequency
+  reminder_time
+  currency
+  loan_rules
+  late_penalty
+
+Module 3 — Loan Management
+Purpose
+
+Manage borrower loans.
+
+Features
+Create Loan
+
+Fields:
+
+  borrower
+  loan_amount
+  interest_rate
+  loan_date
+  due_date
+  payment_method
+  notes
+
+Loan Statuses
+  pending
+  active
+  overdue
+  paid
+  cancelled
+  blacklisted
+
+Interest Types
+Option A — Simple Interest
+  Daily Penalty = Fixed Amount
+
+Example:
+
+  $2/day
+Option B — Percentage Interest
+  2% per day
+
+Daily Interest Calculation
+
+Scheduler calculates:
+
+  remaining_balance + daily_interest
+
+Every day automatically.
+
+Module 4 — Payment Management
+Purpose
+
+Track loan payments.
+
+Features
+Manual Payment Entry
+
+Admin marks payment.
+
+Payment Proof Upload
+
+Borrower uploads screenshot/photo.
+
+Admin approves payment.
+
+Partial Payments
+
+Support:
+
+  full payment
+  partial payment
+  advance payment
+
+Auto Loan Completion
+
+If balance reaches:
+
+  0
+
+Then:
+
+  status = paid
+
+Bot stops reminders.
+
+Module 5 — Reminder System
+Purpose
+
+Automatically remind overdue borrowers.
+
+Features
+Scheduled Reminder Messages
+
+Example message:
+
+  ⚠️ Loan Reminder
+
+  @john has overdue payment.
+
+  Balance: $145
+  Late Days: 5
+  Today's Interest: $2
+
+Reminder Rules
+
+Configurable:
+
+  every 6 hours
+  daily
+  weekly
+
+Reminder Conditions
+
+Send reminder only if:
+
+  loan_status = overdue
+
+AND
+
+  balance > 0
+
+Stop Reminder Automatically
+
+If loan paid:
+
+  status = paid
+
+Then stop all reminders.
+
+Module 6 — Scheduler & Cron Jobs
+Purpose
+
+Run automation tasks.
+
+cPanel Cron Job
+
+Runs every minute:
+
+* * * * * php /home/username/public_html/artisan schedule:run >> /dev/null 2>&1
+
+Laravel Scheduled Commands
+Commands
+
+  loans:check-overdue
+  loans:calculate-interest
+  loans:send-reminders
+  loans:update-status
+
+Module 7 — Queue System
+Purpose
+
+Prevent slow message sending.
+
+Queue Driver
+
+Use:
+
+  database
+
+Recommended for cPanel hosting.
+
+Queue Tasks
+
+Queue:
+
+  -Telegram messages
+  -reminder jobs
+  -payment notifications
+  -report generation
+
+Module 8 — Dashboard Admin Panel
+Purpose
+
+Manage entire system visually.
+
+Dashboard Features
+Super Admin Dashboard
+
+Show:
+
+  -total groups
+  -total loans
+  -overdue loans
+  -collected payments
+  -unpaid balances
+
+Group Admin Dashboard
+
+Show:
+
+  -active borrowers
+  -today reminders
+  -overdue users
+  -payment history
+
+Module 9 — Security System
+Features
+Permission System
+
+Only authorized users can:
+
+  -create loans
+  -edit loans
+  -confirm payments
+
+Activity Logs
+
+Store:
+
+  who created loan
+  who edited loan
+  who approved payment
+  who sent reminder
+
+Telegram Verification
+
+Verify:
+
+  telegram_user_id
+
+before allowing commands.
+
+Module 10 — Notification System
+Telegram Notifications
+
+Send:
+
+  -overdue reminders
+  -payment confirmations
+  -admin alerts
+
+Optional Future Notifications
+
+Later add:
+
+  -email
+  -SMS
+  -push notifications
+
+Recommended Database Tables
+Core Tables
+
+  users
+  telegram_groups
+  group_admins
+  borrowers
+  loans
+  loan_interest_logs
+  payments
+  payment_proofs
+  reminders
+  activity_logs
+  settings
+  telegram_updates
+  jobs
+  failed_jobs

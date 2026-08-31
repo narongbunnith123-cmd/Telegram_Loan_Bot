@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Demo - Loan Payment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .payment-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .reference-code {
+            background: white;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .reference-code strong {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .reference-code code {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .success-message::before {
+            content: "✓ ";
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .instructions-text {
+            color: #333;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn:hover {
+            background: #218838;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💳 Make a Payment</h1>
+        <p class="subtitle">Create a payment request for your loan</p>
+        
+        <div id="paymentForm">
+            <div class="form-group">
+                <label for="loanId">Loan ID</label>
+                <input type="number" id="loanId" placeholder="Enter your loan ID" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Payment Amount ($)</label>
+                <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="gateway">Payment Gateway</label>
+                <select id="gateway" required>
+                    <option value="simulated">Simulated (Testing)</option>
+                    <option value="aba">ABA Bank</option>
+                    <option value="khqr">KHQR</option>
+                    <option value="stripe">Stripe</option>
+                    <option value="paypal">PayPal</option>
+                </select>
+            </div>
+            
+            <button onclick="createPayment()" id="createBtn">Create Payment Request</button>
+        </div>
+        
+        <div id="paymentInstructions" style="display: none;">
+            <h2 style="margin-bottom: 20px; color: #333;">Payment Created!</h2>
+            
+            <div class="reference-code">
+                <strong>Your Reference Code</strong>
+                <code id="referenceCode"></code>
+                <button class="copy-btn" onclick="copyReferenceCode()">📋 Copy Code</button>
+            </div>
+            
+            <div class="payment-instructions">
+                <p class="instructions-text" id="instructions"></p>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <strong>Status:</strong>
+                <span class="status pending" id="statusBadge">pending</span>
+            </div>
+            
+            <button class="refresh-btn" onclick="checkStatus()">🔄 Check Payment Status</button>
+            
+            <div id="successMessage" style="display: none;"></div>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>⏳ Processing...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+    
+    <script>
+        let currentPayment = null;
+        const baseUrl = window.location.origin;
+        
+        async function createPayment() {
+            const loanId = document.getElementById('loanId').value;
+            const amount = document.getElementById('amount').value;
+            const gateway = document.getElementById('gateway').value;
+            
+            if (!loanId || !amount) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                // Using test endpoint (no authentication required)
+                const response = await fetch(`${baseUrl}/api/test/loans/${loanId}/payments/initiate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        gateway: gateway,
+                        notes: 'Payment via demo page'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to create payment');
+                }
+                
+                if (data.success) {
+                    currentPayment = data.payment;
+                    showPaymentInstructions(data.payment);
+                } else {
+                    throw new Error('Payment creation failed');
+                }
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function showPaymentInstructions(payment) {
+            console.log('Showing payment instructions:', payment);
+            
+            document.getElementById('paymentForm').style.display = 'none';
+            document.getElementById('paymentInstructions').style.display = 'block';
+            
+            document.getElementById('referenceCode').textContent = payment.reference_code;
+            document.getElementById('instructions').textContent = payment.instructions;
+            document.getElementById('statusBadge').textContent = payment.status;
+            document.getElementById('statusBadge').className = `status ${payment.status}`;
+        }
+        
+        function copyReferenceCode() {
+            const code = document.getElementById('referenceCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        async function checkStatus() {
+            if (!currentPayment) return;
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                console.log('Checking status for payment ID:', currentPayment.id);
+                
+                // Using test endpoint (no authentication required)
+                const url = `${baseUrl}/api/test/payments/${currentPayment.id}/status`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Status data:', data);
+                
+                document.getElementById('statusBadge').textContent = data.status;
+                document.getElementById('statusBadge').className = `status ${data.status}`;
+                
+                if (data.status === 'approved') {
+                    const successDiv = document.getElementById('successMessage');
+                    successDiv.innerHTML = `
+                        <div class="success-message">
+                            Payment received and approved!<br>
+                            <small>Transaction ID: ${data.transaction_id || 'N/A'}</small>
+                        </div>
+                    `;
+                    successDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Check status error:', error);
+                showError('Failed to check status: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('createBtn').disabled = show;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

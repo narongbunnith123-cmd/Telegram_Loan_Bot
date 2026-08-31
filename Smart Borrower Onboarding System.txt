@@ -1,0 +1,366 @@
+Smart Borrower Onboarding System — Implementation Plan
+
+The goal is:
+
+Make borrower creation feel modern, automated, and SaaS-style
+WITHOUT making the system overly complex.
+
+FINAL UX GOAL
+
+Instead of this:
+
+Admin manually types:
+  - Telegram ID
+  - Username
+
+Your final UX becomes:
+
+   System auto-detects Telegram information
+   Admin only fills missing business data
+
+This is MUCH more professional.
+
+FINAL BORROWER ONBOARDING METHODS
+
+Your system should support 3 borrower creation methods.
+
+Method	                            MVP Priority	       Purpose
+
+Manual Entry	                        HIGH	           Fallback/simple
+Telegram Forward Detection	        HIGH	              Best UX
+Invite Link Verification	        HIGH	          Auto-link Telegram
+CSV Import	                        MEDIUM	             Bulk import
+OCR/AI Extraction	                LOW	            Future feature
+
+RECOMMENDED FINAL UX
+Borrowers Page
+  [ + Add Borrower ]
+
+When clicked:
+
+Step 1 — Choose Method
+  --------------------------------
+  Create Borrower
+  --------------------------------
+
+  (•) Telegram Forward
+  ( ) Manual Entry
+  ( ) CSV Import
+
+  [ Continue ]
+
+===========METHOD 1 — Telegram Forward (Recommended)
+
+BEST UX for your Telegram SaaS.
+
+FLOW
+  Admin opens Borrower Import
+      ↓
+  System generates temporary session
+      ↓
+  Bot asks admin:
+  "Forward a message from borrower"
+      ↓
+  Admin forwards message
+      ↓
+  Laravel extracts Telegram info
+      ↓
+  System auto-fills borrower data
+      ↓
+  Admin completes missing fields
+      ↓
+  Borrower saved
+
+WHAT TELEGRAM AUTO-FILLS
+
+From forwarded message:
+
+  forward_from.id
+  forward_from.username
+  forward_from.first_name
+
+Auto-fill:
+
+  ✓ Telegram User ID
+  ✓ Username
+  ✓ Full Name
+
+Admin only enters:
+
+  - Group
+  - Phone Number
+  - Notes
+
+RECOMMENDED UI
+  --------------------------------
+  Telegram Borrower Detected
+  --------------------------------
+
+  Name:
+  John Doe
+
+  Username:
+  @john
+
+  Telegram Status:
+  ✓ Linked
+
+  --------------------------------
+
+  Group *
+  Phone Number *
+  Address
+  Notes
+
+  [ Create Borrower ]
+
+METHOD 2 — Manual Entry
+
+Fallback option.
+
+Recommended Fields
+
+  Group *
+
+  Full Name *
+
+  Phone Number *
+
+  Telegram Username (Optional)
+
+  Address (Optional)
+
+  Notes
+
+  -----DO NOT require:
+
+  Telegram User ID
+
+AFTER SAVE
+
+System generates:
+
+  Borrower Link Code
+
+Example:
+
+  BRW-92KQ11
+
+And deep link:
+
+  https://t.me/LoanBot?start=BRW-92KQ11
+
+METHOD 3 — CSV IMPORT
+
+Later phase.
+
+Example CSV
+  name,phone,telegram,address
+  John,0123,@john,PP
+  Jane,0987,@jane,TK
+
+Flow:
+
+  Upload CSV
+      ↓
+  Preview Validation
+      ↓
+  Confirm Import
+
+DATABASE STRUCTURE
+
+borrowers TABLE
+
+  borrowers
+  - id
+  - group_id
+  - borrower_code
+  - full_name
+  - phone_number
+  - telegram_user_id
+  - telegram_username
+  - telegram_first_name
+  - telegram_last_name
+  - verification_status
+  - onboarding_source
+  - address
+  - notes
+  - linked_at
+  - created_by
+  - created_at
+  - updated_at
+
+verification_status
+  pending
+  linked
+  blocked
+  inactive
+onboarding_source
+  manual
+  telegram_forward
+  invite_link
+  csv_import
+borrower_link_tokens TABLE
+  borrower_link_tokens
+  - id
+  - borrower_id
+  - token
+  - expires_at
+  - used_at
+  - created_at
+
+Purpose:
+
+  -deep-link verification
+  -Telegram linking
+
+telegram_import_sessions TABLE
+
+Tracks onboarding flow.
+
+  telegram_import_sessions
+  - id
+  - admin_user_id
+  - telegram_group_id
+  - expected_action
+  - payload_json
+  - expires_at
+  - created_at
+
+TELEGRAM BOT FLOW
+FLOW A — Telegram Forward Import
+Step 1
+
+Admin clicks:
+
+  [ Import via Telegram ]
+
+Step 2
+
+Laravel creates session:
+
+  expected_action = waiting_forward
+
+Step 3
+
+Bot sends:
+
+  Please forward a message from the borrower.
+
+Step 4
+
+Webhook receives:
+
+  message.forward_from
+
+Step 5
+
+Laravel auto-detects:
+
+  telegram_user_id
+  telegram_username
+  full_name
+
+Step 6
+
+Bot replies:
+
+  Borrower detected successfully.
+
+  Please complete remaining information in dashboard.
+
+WEB DASHBOARD FLOW
+
+Borrowers Table
+
+  --------------------------------
+  Borrowers
+  --------------------------------
+
+  Name
+  Phone
+  Telegram Status
+  Loans
+  Actions
+
+Telegram Status Badges
+  🟢 Linked
+  🟡 Pending
+  🔴 Blocked
+
+Borrower Details Page
+
+Split sections clearly.
+
+SECTION 1 — Borrower Information
+  Name
+  Phone
+  Address
+  Notes
+
+SECTION 2 — Telegram Integration
+  Telegram Status: Linked
+
+  Username:
+  @john
+
+  Telegram ID:
+  123456789
+
+  Linked At:
+  2026-05-14
+
+  [ Send Invite ]
+  [ Re-Link ]
+  [ Unlink ]
+
+SECTION 3 — Loan Summary
+
+  Total Loans
+  Outstanding Balance
+  Overdue Loans
+  Last Payment
+
+LARAVEL IMPLEMENTATION STRUCTURE
+
+IMPORTANT BUSINESS RULES
+
+Rule 1
+Never trust Telegram usernames.
+
+Why:
+
+  Usernames can change.
+
+Always identify by:
+
+  telegram_user_id
+
+Rule 2
+
+Telegram linking should be OPTIONAL.
+
+Because:
+
+  some borrowers may not use Telegram
+  some groups are offline-managed
+
+Rule 3
+
+Borrower should NOT be deleted if Telegram unlinked.
+
+Keep loan history intact.
+
+Use:
+
+  verification_status
+
+instead.
+
+Rule 4
+
+Always support manual fallback.
+
+Because Telegram privacy settings may block:
+
+  forward_from
