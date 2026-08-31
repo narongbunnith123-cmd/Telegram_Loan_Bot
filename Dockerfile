@@ -19,15 +19,13 @@ FROM composer:2 AS vendor
 
 WORKDIR /app
 
-# Install bcmath extension required by moneyphp/money (laravel/cashier dependency)
-RUN docker-php-ext-install bcmath
-
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader \
+    --ignore-platform-reqs \
     --no-scripts
 
 COPY . .
