@@ -19,6 +19,9 @@ FROM composer:2 AS vendor
 
 WORKDIR /app
 
+# Install bcmath extension required by moneyphp/money (laravel/cashier dependency)
+RUN docker-php-ext-install bcmath
+
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
@@ -59,7 +62,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     gd \
     zip \
     intl \
-    opcache
+    opcache \
+    sockets
 
 # Configure opcache for production
 RUN { \
