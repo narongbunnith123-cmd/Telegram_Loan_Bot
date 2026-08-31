@@ -19,6 +19,9 @@ FROM composer:2 AS vendor
 
 WORKDIR /app
 
+# Cache bust to force rebuild (Railway caches aggressively)
+ARG CACHEBUST=2
+
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
