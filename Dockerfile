@@ -15,7 +15,9 @@ RUN npm run build
 # ──────────────────────────────────────────────────────────
 # Stage 2: Install PHP dependencies
 # ──────────────────────────────────────────────────────────
-FROM php:8.3-cli-alpine AS deps
+FROM php:8.4-cli-alpine AS deps
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN docker-php-ext-install bcmath
 
@@ -33,12 +35,12 @@ RUN composer install \
     --no-scripts
 
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 
 # ──────────────────────────────────────────────────────────
 # Stage 3: Production image (PHP-FPM + Nginx)
 # ──────────────────────────────────────────────────────────
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
