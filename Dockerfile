@@ -100,13 +100,15 @@ COPY --from=deps /app/vendor ./vendor
 
 # Copy Nginx config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+RUN sed -i 's/\r$//' /etc/nginx/http.d/default.conf
 
 # Copy supervisor config
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN sed -i 's/\r$//' /etc/supervisor/conf.d/supervisord.conf
 
-# Copy entrypoint
+# Copy entrypoint (fix Windows line endings)
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
