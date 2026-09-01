@@ -33,9 +33,20 @@ php artisan route:cache
 echo "→ Caching views..."
 php artisan view:cache
 
-# Run database migrations (non-fatal - app starts even if DB isn't ready)
+# Run database migrations (non-fatal)
 echo "→ Running migrations..."
 php artisan migrate --force || echo "⚠ Migration failed - will retry on next deploy"
+
+# Ensure log and runtime directories exist
+mkdir -p /var/log/supervisor /run/nginx /var/run
+
+# Configure dynamic PORT for Railway
+PORT="${PORT:-8080}"
+sed -i "s/listen [0-9]\+;/listen ${PORT};/g" /etc/nginx/http.d/default.conf
+echo "→ Nginx listening on port ${PORT}"
+
+# Test Nginx configuration
+nginx -t
 
 echo "========================================="
 echo "  Deploy complete. Starting services..."
