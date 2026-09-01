@@ -19,7 +19,8 @@ FROM php:8.4-cli-alpine AS deps
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-RUN docker-php-ext-install bcmath
+RUN apk add --no-cache libzip-dev \
+    && docker-php-ext-install bcmath zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
