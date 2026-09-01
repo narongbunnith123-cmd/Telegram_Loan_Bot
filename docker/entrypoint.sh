@@ -33,9 +33,11 @@ php artisan route:cache
 echo "→ Caching views..."
 php artisan view:cache
 
-# Run database migrations (non-fatal)
+# Run database migrations and seeders (non-fatal)
 echo "→ Running migrations..."
 php artisan migrate --force || echo "⚠ Migration failed - will retry on next deploy"
+echo "→ Running seeders..."
+php artisan db:seed --force || echo "⚠ Seeder failed - will retry on next deploy"
 
 # Ensure log and runtime directories exist
 mkdir -p /var/log/supervisor /run/nginx /var/run

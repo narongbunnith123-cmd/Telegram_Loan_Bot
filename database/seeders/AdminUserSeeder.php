@@ -16,7 +16,7 @@ class AdminUserSeeder extends Seeder
             ['name' => 'Default', 'status' => 'active']
         );
 
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'admin@loanbot.com'],
             [
                 'tenant_id'      => $tenant->id,
@@ -25,6 +25,10 @@ class AdminUserSeeder extends Seeder
                 'is_super_admin' => true,
             ]
         );
+
+        if (!$user->hasRole('super_admin')) {
+            $user->assignRole('super_admin');
+        }
 
         $this->command->info('Admin user created: admin@loanbot.com / password');
     }
