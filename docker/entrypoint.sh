@@ -21,6 +21,10 @@ chmod -R 775 storage bootstrap/cache
 # Create storage link if it doesn't exist
 php artisan storage:link --force 2>/dev/null || true
 
+# Discover packages (skipped during build)
+echo "→ Discovering packages..."
+php artisan package:discover --ansi || true
+
 # Cache configuration for performance
 echo "→ Caching configuration..."
 php artisan config:cache

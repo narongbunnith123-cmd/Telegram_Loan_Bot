@@ -36,14 +36,14 @@ RUN composer install \
     --no-scripts
 
 COPY . .
-RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs --no-scripts
 
 # ──────────────────────────────────────────────────────────
 # Stage 3: Production image (PHP-FPM + Nginx)
 # ──────────────────────────────────────────────────────────
 FROM php:8.4-fpm-alpine
 
-# Install system dependencies
+# Install system dependencies and PHP extensions
 RUN apk add --no-cache \
     nginx \
     supervisor \
@@ -55,10 +55,8 @@ RUN apk add --no-cache \
     oniguruma-dev \
     icu-dev \
     linux-headers \
-    mysql-client
-
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    mysql-client \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     mbstring \
