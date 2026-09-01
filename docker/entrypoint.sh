@@ -33,9 +33,9 @@ php artisan route:cache
 echo "→ Caching views..."
 php artisan view:cache
 
-# Run database migrations
+# Run database migrations (non-fatal - app starts even if DB isn't ready)
 echo "→ Running migrations..."
-php artisan migrate --force
+php artisan migrate --force || echo "⚠ Migration failed - will retry on next deploy"
 
 echo "========================================="
 echo "  Deploy complete. Starting services..."
