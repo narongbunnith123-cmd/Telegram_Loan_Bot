@@ -175,22 +175,12 @@ Route::get('/force-seed', function () {
 
 // TEMPORARY: Show actual error details
 Route::get('/debug-error', function () {
-    try {
-        config(['database.default' => 'mysql']);
-        config(['cache.default' => 'array']);
-        \Illuminate\Support\Facades\DB::purge('mysql');
-
-        $conn = config('database.default');
-        $user = \App\Models\User::where('email', 'admin@loanbot.com')->first();
-        $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
-        $tableNames = array_map(fn($t) => array_values((array)$t)[0], $tables);
-
-        return '<pre>' . json_encode([
-            'db_connection' => $conn,
-            'user_found' => $user ? true : false,
-            'tables' => $tableNames,
-        ], JSON_PRETTY_PRINT) . '</pre>';
-    } catch (\Exception $e) {
-        return '<pre>Error: ' . $e->getMessage() . "\n\n" . $e->getTraceAsString() . '</pre>';
+    $logFile = storage_path('logs/laravel.log');
+    if (file_exists($logFile)) {
+        // Get last 50 lines
+        $lines = file($logFile);
+        $lastLines = array_slice($lines, -50);
+        return '<pre>' . implode("", $lastLines) . '</pre>';
     }
+    return "No log file found at: " . $logFile;
 });
