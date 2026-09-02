@@ -102,17 +102,53 @@ Route::middleware('auth')->group(function () {
 
 // TEMPORARY ROUTE FOR DEBUGGING
 Route::get('/force-seed', function () {
+    $output = [];
     try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-        $user = \App\Models\User::where('email', 'admin@loanbot.com')->first();
+        // Clear any stale config cache
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        $output[] = "Config cache cleared.";
+
+        // Show what connection we're using
+        $conn = config('database.default');
+        $host = config('database.connections.mysql.host');
+        $output[] = "DB_CONNECTION: {$conn}, DB_HOST: {$host}";
+
+        // Force mysql connection
+        config(['database.default' => 'mysql']);
+        $output[] = "Forced DB_CONNECTION to mysql.";
+
+        // Run migrations (skip errors gracefully)
+        try {
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output[] = "Migrations: OK";
+        } catch (\Exception $e) {
+            $output[] = "Migration error (non-fatal): " . $e->getMessage();
+        }
+
+        // Run seeders
+        try {
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+            $output[] = "Seeders: OK";
+        } catch (\Exception $e) {
+            $output[] = "Seeder error: " . $e->getMessage();
+        }
+
+        // Check if user exists and force reset password
+        $user = \App\Models\User::on('mysql')->where('email', 'admin@loanbot.com')->first();
         if ($user) {
             $user->password = \Illuminate\Support\Facades\Hash::make('password');
             $user->save();
-            return "Seed complete! User exists. ID: " . $user->id . ", Has super_admin role: " . ($user->hasRole('super_admin') ? 'Yes' : 'No');
+            $output[] = "User EXISTS. ID: {$user->id}. Password reset to 'password'. Role: " . ($user->hasRole('super_admin') ? 'super_admin' : 'none');
+        } else {
+            $output[] = "User NOT FOUND after seeding!";
         }
-        return "Seed complete but user not found!";
+
+        // Re-cache config for performance
+        \Illuminate\Support\Facades\Artisan::call('config:cache');
+        $output[] = "Config re-cached.";
+
     } catch (\Exception $e) {
-        return "Error: " . $e->getMessage();
+        $output[] = "FATAL Error: " . $e->getMessage();
     }
+    return '<pre>' . implode("\n", $output) . '</pre>';
 });
