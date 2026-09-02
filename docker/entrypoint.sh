@@ -38,6 +38,8 @@ echo "→ Caching views..."
 php artisan view:cache
 
 # Run database migrations and seeders (non-fatal)
+echo "→ Wiping database for clean start..."
+php artisan db:wipe --force || echo "⚠ Wipe failed"
 echo "→ Running migrations..."
 php artisan migrate --force || echo "⚠ Migration failed - will retry on next deploy"
 echo "→ Running seeders..."
