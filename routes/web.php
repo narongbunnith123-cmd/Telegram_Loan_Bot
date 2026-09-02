@@ -114,10 +114,17 @@ Route::get('/force-seed', function () {
         $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
         $output[] = "Connected! Tables found: " . count($tables);
 
-        // Wipe and recreate all tables (resolves enum schema mismatches from partial deploys)
+        // Manually drop all tables to bypass Aiven foreign key constraint errors
         try {
-            \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
-            $output[] = "migrate:fresh: OK - all tables recreated!";
+            \Illuminate\Support\Facades\DB::unprepared('SET FOREIGN_KEY_CHECKS = 0;');
+            foreach (\Illuminate\Support\Facades\DB::select('SHOW TABLES') as $table) {
+                $tableName = array_values((array)$table)[0];
+                \Illuminate\Support\Facades\DB::unprepared("DROP TABLE IF EXISTS `{$tableName}` CASCADE;");
+            }
+            \Illuminate\Support\Facades\DB::unprepared('SET FOREIGN_KEY_CHECKS = 1;');
+            
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output[] = "Manual Drop + Migrate: OK - all tables recreated!";
         } catch (\Exception $e) {
             $output[] = "Migration error: " . \Illuminate\Support\Str::limit($e->getMessage(), 150);
         }
