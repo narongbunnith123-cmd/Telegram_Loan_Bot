@@ -104,48 +104,68 @@ Route::middleware('auth')->group(function () {
 Route::get('/force-seed', function () {
     $output = [];
     try {
-        // Clear any stale config cache
-        \Illuminate\Support\Facades\Artisan::call('config:clear');
-        $output[] = "Config cache cleared.";
-
-        // Show what connection we're using
-        $conn = config('database.default');
-        $host = config('database.connections.mysql.host');
-        $output[] = "DB_CONNECTION: {$conn}, DB_HOST: {$host}";
-
-        // Force mysql connection
+        // Force mysql and array cache to avoid permission issues
         config(['database.default' => 'mysql']);
-        $output[] = "Forced DB_CONNECTION to mysql.";
+        config(['cache.default' => 'array']);
+        \Illuminate\Support\Facades\DB::purge('mysql');
+        $output[] = "Forced mysql + array cache.";
 
-        // Run migrations (skip errors gracefully)
+        // Test the connection
+        $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
+        $output[] = "Connected! Tables found: " . count($tables);
+
+        // Run pending migrations only (skip already-done ones)
         try {
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $output[] = "Migrations: OK";
         } catch (\Exception $e) {
-            $output[] = "Migration error (non-fatal): " . $e->getMessage();
+            $output[] = "Migration note: " . \Illuminate\Support\Str::limit($e->getMessage(), 100);
         }
 
-        // Run seeders
-        try {
-            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-            $output[] = "Seeders: OK";
-        } catch (\Exception $e) {
-            $output[] = "Seeder error: " . $e->getMessage();
-        }
+        // Create tenant directly
+        $tenant = \App\Models\Tenant::firstOrCreate(
+            ['slug' => 'default'],
+            ['name' => 'Default', 'status' => 'active']
+        );
+        $output[] = "Tenant: ID={$tenant->id}, slug={$tenant->slug}";
 
-        // Check if user exists and force reset password
-        $user = \App\Models\User::on('mysql')->where('email', 'admin@loanbot.com')->first();
-        if ($user) {
+        // Create admin user directly
+        $user = \App\Models\User::where('email', 'admin@loanbot.com')->first();
+        if (!$user) {
+            $user = \App\Models\User::create([
+                'tenant_id'      => $tenant->id,
+                'name'           => 'Admin',
+                'email'          => 'admin@loanbot.com',
+                'password'       => \Illuminate\Support\Facades\Hash::make('password'),
+                'is_super_admin' => true,
+            ]);
+            $output[] = "Admin user CREATED. ID: {$user->id}";
+        } else {
             $user->password = \Illuminate\Support\Facades\Hash::make('password');
             $user->save();
-            $output[] = "User EXISTS. ID: {$user->id}. Password reset to 'password'. Role: " . ($user->hasRole('super_admin') ? 'super_admin' : 'none');
-        } else {
-            $output[] = "User NOT FOUND after seeding!";
+            $output[] = "Admin user EXISTS. ID: {$user->id}. Password reset.";
         }
 
-        // Re-cache config for performance
+        // Create roles & permissions
+        try {
+            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            $superAdminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin']);
+            if (!$user->hasRole('super_admin')) {
+                $user->assignRole('super_admin');
+            }
+            $output[] = "Role super_admin assigned.";
+        } catch (\Exception $e) {
+            $output[] = "Role error: " . $e->getMessage();
+        }
+
+        // Re-cache config with correct mysql connection
+        config(['database.default' => 'mysql']);
+        config(['cache.default' => 'file']);
         \Illuminate\Support\Facades\Artisan::call('config:cache');
-        $output[] = "Config re-cached.";
+        $output[] = "Config re-cached with mysql.";
+
+        $output[] = "";
+        $output[] = "✅ DONE! Now go to /login and use: admin@loanbot.com / password";
 
     } catch (\Exception $e) {
         $output[] = "FATAL Error: " . $e->getMessage();
