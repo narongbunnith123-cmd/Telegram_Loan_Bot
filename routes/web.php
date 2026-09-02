@@ -99,3 +99,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/bot/link-code', [BotSetupController::class, 'generateLinkCode'])->name('bot.link-code');
     Route::delete('/bot/unlink', [BotSetupController::class, 'unlinkTelegram'])->name('bot.unlink');
 });
+
+// TEMPORARY ROUTE FOR DEBUGGING
+Route::get('/force-seed', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        $user = \App\Models\User::where('email', 'admin@loanbot.com')->first();
+        if ($user) {
+            $user->password = \Illuminate\Support\Facades\Hash::make('password');
+            $user->save();
+            return "Seed complete! User exists. ID: " . $user->id . ", Has super_admin role: " . ($user->hasRole('super_admin') ? 'Yes' : 'No');
+        }
+        return "Seed complete but user not found!";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
