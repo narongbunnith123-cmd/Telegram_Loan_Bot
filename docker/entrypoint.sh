@@ -25,6 +25,10 @@ php artisan storage:link --force 2>/dev/null || true
 echo "→ Discovering packages..."
 php artisan package:discover --ansi || true
 
+# Force MySQL connection (prevent sqlite fallback)
+export DB_CONNECTION="${DB_CONNECTION:-mysql}"
+echo "→ DB_CONNECTION=${DB_CONNECTION}"
+
 # Cache configuration for performance
 echo "→ Caching configuration..."
 php artisan config:cache
