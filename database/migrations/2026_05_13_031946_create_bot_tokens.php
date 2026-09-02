@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('bot_tokens', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->text('token');          // Encrypted with Laravel encrypt()
+            $table->text('token');
             $table->string('bot_username')->nullable();
             $table->string('bot_name')->nullable();
             $table->boolean('webhook_set')->default(false);

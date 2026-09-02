@@ -16,7 +16,7 @@ class BotToken extends Model
         'bot_name',
         'webhook_set',
         'webhook_url',
-        'webhook_token',    // ← was missing from fillable!
+        'webhook_token',
     ];
 
     protected $hidden = ['token'];

@@ -34,3 +34,4 @@ check_reminders.php
 test-complete-flow.php
 test-webhook.php
 test_indexes.php
+.env.aiven
