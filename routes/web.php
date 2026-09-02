@@ -114,12 +114,12 @@ Route::get('/force-seed', function () {
         $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
         $output[] = "Connected! Tables found: " . count($tables);
 
-        // Wipe all tables and recreate cleanly (fresh deploy, no real data)
+        // Run migrations (database may be empty after Aiven restart)
         try {
-            \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
-            $output[] = "migrate:fresh: OK - all tables recreated!";
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output[] = "Migrations: OK";
         } catch (\Exception $e) {
-            $output[] = "Migration error: " . \Illuminate\Support\Str::limit($e->getMessage(), 150);
+            $output[] = "Migration note: " . \Illuminate\Support\Str::limit($e->getMessage(), 150);
         }
 
         // Create tenant directly
