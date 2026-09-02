@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust all proxies (required for HTTPS generation behind Railway load balancer)
+        $middleware->trustProxies(at: '*');
+
         // Register the telegram webhook verification middleware
         $middleware->alias([
             'telegram.hmac' => \App\Http\Middleware\VerifyTelegramHmac::class,
