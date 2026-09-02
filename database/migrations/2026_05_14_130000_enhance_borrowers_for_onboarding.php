@@ -9,12 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // MySQL uses the composite unique index for the tenant_id FK constraint.
-        // Must add a standalone index for tenant_id first so the FK still works.
-        DB::statement('ALTER TABLE `borrowers` ADD INDEX `borrowers_tenant_id_index` (`tenant_id`)');
-        DB::statement('ALTER TABLE `borrowers` DROP INDEX `borrowers_tenant_id_telegram_user_id_group_id_unique`');
-        DB::statement('ALTER TABLE `borrowers` DROP INDEX `borrowers_group_id_foreign`');
-        DB::statement('ALTER TABLE `borrowers` DROP COLUMN `group_id`');
+        // Drop the foreign key and column safely
+        Schema::table('borrowers', function (Blueprint $table) {
+            $table->index('tenant_id'); // Required for the tenant_id FK constraint to survive
+            $table->dropForeign(['group_id']);
+            $table->dropColumn('group_id');
+            $table->dropUnique('borrowers_tenant_id_telegram_user_id_group_id_unique');
+        });
 
         // Add new columns and constraints
         Schema::table('borrowers', function (Blueprint $table) {
