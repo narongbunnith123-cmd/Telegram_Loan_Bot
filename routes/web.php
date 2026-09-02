@@ -114,12 +114,12 @@ Route::get('/force-seed', function () {
         $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
         $output[] = "Connected! Tables found: " . count($tables);
 
-        // Run pending migrations only (skip already-done ones)
+        // Wipe all tables and recreate cleanly (fresh deploy, no real data)
         try {
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            $output[] = "Migrations: OK";
+            \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
+            $output[] = "migrate:fresh: OK - all tables recreated!";
         } catch (\Exception $e) {
-            $output[] = "Migration note: " . \Illuminate\Support\Str::limit($e->getMessage(), 100);
+            $output[] = "Migration error: " . \Illuminate\Support\Str::limit($e->getMessage(), 150);
         }
 
         // Create tenant directly
